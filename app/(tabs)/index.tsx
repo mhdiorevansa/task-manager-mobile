@@ -1,98 +1,89 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
+import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type Task = {
+	id: string;
+	title: string;
+	done: boolean;
+};
+
+const tasks: Task[] = [
+	{ id: "1", title: "Task 1", done: false },
+	{ id: "2", title: "Task 2", done: true },
+	{ id: "3", title: "Task 3", done: false },
+];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+	const totalTasks: number = tasks.length;
+	const doneTasks: number = tasks.filter((t) => t.done).length;
+	const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+	return (
+		<View className="flex-1 bg-neutral-900 px-6 pt-14">
+			{/* header */}
+			<View className="mb-6">
+				<Text className="text-2xl font-bold text-white">My Tasks</Text>
+				<Text className="text-white">{new Date().toDateString()}</Text>
+			</View>
+
+			{/* stats */}
+			<View className="flex-row gap-3 mb-6">
+				<View className="flex-1 bg-white rounded-2xl p-4">
+					<Text className="text-neutral-500">Total Tasks</Text>
+					<Text className="text-2xl font-bold">{totalTasks}</Text>
+				</View>
+
+				<View className="flex-1 bg-white rounded-2xl p-4">
+					<Text className="text-neutral-500">Done tasks</Text>
+					<Text className="text-2xl font-bold text-green-600">{doneTasks}</Text>
+				</View>
+			</View>
+
+			{/* task list */}
+			<FlatList<Task>
+				data={tasks}
+				keyExtractor={(item) => item.id}
+				contentContainerStyle={{ paddingBottom: 100 }}
+				renderItem={({ item }) => (
+					<View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between">
+						<Text className={`text-base ${item.done ? "line-through text-neutral-400" : ""}`}>
+							{item.title}
+						</Text>
+						{item.done && <Text className="text-green-600 font-semibold">✓</Text>}
+					</View>
+				)}
+			/>
+
+			{/* floating button */}
+			<Pressable
+				onPress={() => setIsModalVisible(true)}
+				className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center">
+				<Feather name="plus" size={26} color="white" />
+			</Pressable>
+
+			{/* modal */}
+			<Modal visible={isModalVisible} animationType="slide" transparent>
+				<View className="flex-1 bg-neutral-900/40 justify-end">
+					<View className="bg-white rounded-t-3xl p-6">
+						<Text className="text-xl font-bold mb-4">New Task</Text>
+						<TextInput
+							placeholder="Task title..."
+							className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
+						/>
+						<View className="flex-row gap-3">
+							<Pressable
+								onPress={() => setIsModalVisible(false)}
+								className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
+								<Text>Cancel</Text>
+							</Pressable>
+							<Pressable className="flex-1 py-3 rounded-xl bg-black items-center">
+								<Text className="text-white font-semibold">Save</Text>
+							</Pressable>
+						</View>
+					</View>
+				</View>
+			</Modal>
+		</View>
+	);
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
