@@ -6,26 +6,63 @@ import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native"
 type Task = {
 	id: string;
 	title: string;
-	done: boolean;
+	is_done?: boolean;
+};
+
+type TaskForm = {
+	title: string;
+	is_done?: boolean;
 };
 
 export default function HomeScreen() {
 	const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+	// fetch tasks
 	const [tasks, setTasks] = useState<Task[]>([]);
+	const getTasks = async () => {
+		try {
+			const { data: tasks, error } = await supabase.from("tasks").select();
+			if (error) throw error.message;
+			if (tasks && tasks.length > 0) setTasks(tasks);
+		} catch (error) {
+			throw error;
+		}
+	};
 	useEffect(() => {
-		const getTasks = async () => {
-			try {
-				const { data: tasks, error } = await supabase.from("tasks").select();
-				if (error) console.error("Error fetching tasks:", error.message);
-				if (tasks && tasks.length > 0) setTasks(tasks);
-			} catch (error) {
-				console.error("Error fetching tasks:", error);
-			}
-		};
 		getTasks();
 	}, []);
 	const totalTasks: number = tasks.length;
-	const doneTasks: number = tasks.filter((t: Task) => t.done).length;
+	const doneTasks: number = tasks.filter((t: Task) => t.is_done).length;
+
+	// create task
+	const [form, setForm] = useState<TaskForm>({
+		title: "",
+    is_done: false,
+	});
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const updateForm = (key: keyof TaskForm, value: string) => {
+		setForm((prev) => ({
+			...prev,
+			[key]: value,
+		}));
+	};
+	const handleCreateTask = async () => {
+		if (!form.title.trim()) return;
+		try {
+			setIsLoading(true);
+			const { error } = await supabase.from("tasks").insert({
+				...form,
+				is_done: false,
+			});
+			if (error) throw error.message;
+			setForm({ title: "" });
+			setIsModalVisible(false);
+			getTasks();
+		} catch (error) {
+			throw error;
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	return (
 		<View className="flex-1 bg-neutral-900 px-6 pt-14">
@@ -56,10 +93,10 @@ export default function HomeScreen() {
 					contentContainerStyle={{ paddingBottom: 100 }}
 					renderItem={({ item }) => (
 						<View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between">
-							<Text className={`text-base ${item.done ? "line-through text-neutral-400" : ""}`}>
+							<Text className={`text-base ${item.is_done ? "line-through text-neutral-400" : ""}`}>
 								{item.title}
 							</Text>
-							{item.done && <Text className="text-green-600 font-semibold">✓</Text>}
+							{item.is_done && <Text className="text-green-600 font-semibold">✓</Text>}
 						</View>
 					)}
 				/>
@@ -84,6 +121,8 @@ export default function HomeScreen() {
 						<TextInput
 							placeholder="Task title..."
 							className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
+							value={form.title}
+							onChangeText={(value) => updateForm("title", value)}
 						/>
 						<View className="flex-row gap-3">
 							<Pressable
@@ -91,7 +130,10 @@ export default function HomeScreen() {
 								className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
 								<Text>Cancel</Text>
 							</Pressable>
-							<Pressable className="flex-1 py-3 rounded-xl bg-black items-center">
+							<Pressable
+								className="flex-1 py-3 rounded-xl bg-black items-center"
+								onPress={handleCreateTask}
+								disabled={isLoading}>
 								<Text className="text-white font-semibold">Save</Text>
 							</Pressable>
 						</View>
