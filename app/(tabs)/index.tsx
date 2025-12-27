@@ -1,7 +1,7 @@
 import { supabase } from "@/utils/supabase";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 
 type Task = {
 	id: string;
@@ -16,11 +16,15 @@ type TaskForm = {
 
 export default function HomeScreen() {
 	const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+
 	// fetch tasks
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const getTasks = async () => {
 		try {
-			const { data: tasks, error } = await supabase.from("tasks").select();
+			const { data: tasks, error } = await supabase
+				.from("tasks")
+				.select()
+				.order("created_at", { ascending: false });
 			if (error) throw error.message;
 			if (tasks && tasks.length > 0) setTasks(tasks);
 		} catch (error) {
@@ -36,7 +40,7 @@ export default function HomeScreen() {
 	// create task
 	const [form, setForm] = useState<TaskForm>({
 		title: "",
-    is_done: false,
+		is_done: false,
 	});
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const updateForm = (key: keyof TaskForm, value: string) => {
@@ -62,6 +66,18 @@ export default function HomeScreen() {
 		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	// update task
+	const toggleTaskDone = async (taskId: string) => {
+		const { error } = await supabase
+			.from("tasks")
+			.update({
+				is_done: !tasks.find((t) => t.id === taskId)?.is_done,
+			})
+			.eq("id", taskId);
+		if (error) throw error.message;
+		getTasks();
 	};
 
 	return (
@@ -93,10 +109,19 @@ export default function HomeScreen() {
 					contentContainerStyle={{ paddingBottom: 100 }}
 					renderItem={({ item }) => (
 						<View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between">
-							<Text className={`text-base ${item.is_done ? "line-through text-neutral-400" : ""}`}>
-								{item.title}
-							</Text>
-							{item.is_done && <Text className="text-green-600 font-semibold">✓</Text>}
+							<View className="flex flex-row items-center gap-3">
+								<Text
+									className={`text-base ${item.is_done ? "line-through text-neutral-400" : ""}`}>
+									{item.title}
+								</Text>
+								{item.is_done && <Text className="text-green-600 font-semibold">✓</Text>}
+							</View>
+							<Switch
+								value={item.is_done}
+								onValueChange={() => toggleTaskDone(item.id)}
+								trackColor={{ false: "#ccc", true: "#4ade80" }}
+								thumbColor={item.is_done ? "#16a34a" : "#f3f4f6"}
+							/>
 						</View>
 					)}
 				/>
