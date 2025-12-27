@@ -1,5 +1,6 @@
+import { supabase } from "@/utils/supabase";
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
 
 type Task = {
@@ -8,16 +9,23 @@ type Task = {
 	done: boolean;
 };
 
-const tasks: Task[] = [
-	{ id: "1", title: "Task 1", done: false },
-	{ id: "2", title: "Task 2", done: true },
-	{ id: "3", title: "Task 3", done: false },
-];
-
 export default function HomeScreen() {
-	const totalTasks: number = tasks.length;
-	const doneTasks: number = tasks.filter((t) => t.done).length;
 	const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+	const [tasks, setTasks] = useState<Task[]>([]);
+	useEffect(() => {
+		const getTasks = async () => {
+			try {
+				const { data: tasks, error } = await supabase.from("tasks").select();
+				if (error) console.error("Error fetching tasks:", error.message);
+				if (tasks && tasks.length > 0) setTasks(tasks);
+			} catch (error) {
+				console.error("Error fetching tasks:", error);
+			}
+		};
+		getTasks();
+	}, []);
+	const totalTasks: number = tasks.length;
+	const doneTasks: number = tasks.filter((t: Task) => t.done).length;
 
 	return (
 		<View className="flex-1 bg-neutral-900 px-6 pt-14">
@@ -41,19 +49,25 @@ export default function HomeScreen() {
 			</View>
 
 			{/* task list */}
-			<FlatList<Task>
-				data={tasks}
-				keyExtractor={(item) => item.id}
-				contentContainerStyle={{ paddingBottom: 100 }}
-				renderItem={({ item }) => (
-					<View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between">
-						<Text className={`text-base ${item.done ? "line-through text-neutral-400" : ""}`}>
-							{item.title}
-						</Text>
-						{item.done && <Text className="text-green-600 font-semibold">✓</Text>}
-					</View>
-				)}
-			/>
+			{tasks && tasks.length > 0 ? (
+				<FlatList<Task>
+					data={tasks}
+					keyExtractor={(item) => item.id}
+					contentContainerStyle={{ paddingBottom: 100 }}
+					renderItem={({ item }) => (
+						<View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between">
+							<Text className={`text-base ${item.done ? "line-through text-neutral-400" : ""}`}>
+								{item.title}
+							</Text>
+							{item.done && <Text className="text-green-600 font-semibold">✓</Text>}
+						</View>
+					)}
+				/>
+			) : (
+				<View className="bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between">
+					<Text className="text-base">No tasks</Text>
+				</View>
+			)}
 
 			{/* floating button */}
 			<Pressable
