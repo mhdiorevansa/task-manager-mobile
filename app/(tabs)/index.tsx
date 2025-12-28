@@ -15,7 +15,8 @@ type TaskForm = {
 };
 
 export default function HomeScreen() {
-	const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+	const [isCreateModalVisible, setIsCreateModalVisible] = useState<boolean>(false);
+	const [isUpdateModalVisible, setIsUpdateModalVisible] = useState<boolean>(false);
 
 	// fetch tasks
 	const [tasks, setTasks] = useState<Task[]>([]);
@@ -43,7 +44,7 @@ export default function HomeScreen() {
 		is_done: false,
 	});
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const updateForm = (key: keyof TaskForm, value: string) => {
+	const updateForm = <Field extends keyof TaskForm>(key: Field, value: TaskForm[Field]) => {
 		setForm((prev) => ({
 			...prev,
 			[key]: value,
@@ -59,7 +60,7 @@ export default function HomeScreen() {
 			});
 			if (error) throw error.message;
 			setForm({ title: "" });
-			setIsModalVisible(false);
+			setIsCreateModalVisible(false);
 			getTasks();
 		} catch (error) {
 			throw error;
@@ -68,16 +69,43 @@ export default function HomeScreen() {
 		}
 	};
 
-	// update task
+	// update is done task
 	const toggleTaskDone = async (taskId: string) => {
-		const { error } = await supabase
-			.from("tasks")
-			.update({
-				is_done: !tasks.find((t) => t.id === taskId)?.is_done,
-			})
-			.eq("id", taskId);
-		if (error) throw error.message;
-		getTasks();
+		try {
+			const { error } = await supabase
+				.from("tasks")
+				.update({
+					is_done: !tasks.find((t) => t.id === taskId)?.is_done,
+				})
+				.eq("id", taskId);
+			if (error) throw error.message;
+			getTasks();
+		} catch (error) {
+			throw error;
+		}
+	};
+
+	// update task
+	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+	const handleUpdateTask = async () => {
+		if (!selectedTask) return;
+		try {
+			setIsLoading(true);
+			const { error } = await supabase
+				.from("tasks")
+				.update({
+					...form,
+				})
+				.eq("id", selectedTask?.id);
+			if (error) throw error.message;
+		} catch (error) {
+			throw error;
+		} finally {
+			setIsUpdateModalVisible(false);
+			setIsLoading(false);
+			setForm({ title: "" });
+			getTasks();
+		}
 	};
 
 	return (
@@ -116,12 +144,26 @@ export default function HomeScreen() {
 								</Text>
 								{item.is_done && <Text className="text-green-600 font-semibold">✓</Text>}
 							</View>
-							<Switch
-								value={item.is_done}
-								onValueChange={() => toggleTaskDone(item.id)}
-								trackColor={{ false: "#ccc", true: "#4ade80" }}
-								thumbColor={item.is_done ? "#16a34a" : "#f3f4f6"}
-							/>
+							<View className="flex flex-row items-center gap-3">
+								<Pressable
+									className="p-2 rounded-xl bg-yellow-500"
+									onPress={() => {
+										setIsUpdateModalVisible(true);
+										setSelectedTask(item);
+										setForm({
+											title: item.title,
+											is_done: item.is_done,
+										});
+									}}>
+									<Feather name="edit" size={17} color="white" />
+								</Pressable>
+								<Switch
+									value={item.is_done}
+									onValueChange={() => toggleTaskDone(item.id)}
+									trackColor={{ false: "#ccc", true: "#4ade80" }}
+									thumbColor={item.is_done ? "#16a34a" : "#f3f4f6"}
+								/>
+							</View>
 						</View>
 					)}
 				/>
@@ -133,13 +175,13 @@ export default function HomeScreen() {
 
 			{/* floating button */}
 			<Pressable
-				onPress={() => setIsModalVisible(true)}
+				onPress={() => setIsCreateModalVisible(true)}
 				className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center">
 				<Feather name="plus" size={26} color="white" />
 			</Pressable>
 
-			{/* modal */}
-			<Modal visible={isModalVisible} animationType="slide" transparent>
+			{/* modal add */}
+			<Modal visible={isCreateModalVisible} animationType="slide" transparent>
 				<View className="flex-1 bg-neutral-900/40 justify-end">
 					<View className="bg-white rounded-t-3xl p-6">
 						<Text className="text-xl font-bold mb-4">New Task</Text>
@@ -151,13 +193,44 @@ export default function HomeScreen() {
 						/>
 						<View className="flex-row gap-3">
 							<Pressable
-								onPress={() => setIsModalVisible(false)}
+								onPress={() => setIsCreateModalVisible(false)}
 								className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
 								<Text>Cancel</Text>
 							</Pressable>
 							<Pressable
 								className="flex-1 py-3 rounded-xl bg-black items-center"
 								onPress={handleCreateTask}
+								disabled={isLoading}>
+								<Text className="text-white font-semibold">Save</Text>
+							</Pressable>
+						</View>
+					</View>
+				</View>
+			</Modal>
+
+			{/* modal update */}
+			<Modal visible={isUpdateModalVisible} animationType="slide" transparent>
+				<View className="flex-1 bg-neutral-900/40 justify-end">
+					<View className="bg-white rounded-t-3xl p-6">
+						<Text className="text-xl font-bold mb-4">Update Task</Text>
+						<TextInput
+							placeholder="Task title..."
+							className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
+							value={form.title}
+							onChangeText={(value) => updateForm("title", value)}
+						/>
+						<View className="flex-row gap-3">
+							<Pressable
+								onPress={() => {
+									setIsUpdateModalVisible(false);
+									setForm({ title: "" });
+								}}
+								className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
+								<Text>Cancel</Text>
+							</Pressable>
+							<Pressable
+								className="flex-1 py-3 rounded-xl bg-black items-center"
+								onPress={handleUpdateTask}
 								disabled={isLoading}>
 								<Text className="text-white font-semibold">Save</Text>
 							</Pressable>
