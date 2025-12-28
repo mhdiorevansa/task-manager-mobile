@@ -136,6 +136,29 @@ export default function HomeScreen() {
 		}
 	};
 
+	// search task
+	const [search, setSearch] = useState<string>("");
+	const searchTasks = async (keyword: string) => {
+		try {
+			setIsLoading(true);
+			let query = supabase.from("tasks").select().order("created_at", { ascending: false });
+			if (keyword.trim()) query = query.ilike("title", `%${keyword}%`);
+			const { data, error } = await query;
+			if (error) throw error.message;
+			setTasks(data || []);
+		} catch (error) {
+			throw error;
+		} finally {
+			setIsLoading(false);
+		}
+	};
+	useEffect(() => {
+		const delay = setTimeout(() => {
+			searchTasks(search);
+		}, 400);
+		return () => clearTimeout(delay);
+	}, [search]);
+
 	return (
 		<View className="flex-1 bg-neutral-900 px-6 pt-14">
 			{/* header */}
@@ -154,6 +177,22 @@ export default function HomeScreen() {
 				<View className="flex-1 bg-white rounded-2xl p-4">
 					<Text className="text-neutral-500">Done tasks</Text>
 					<Text className="text-2xl font-bold text-green-600">{doneTasks}</Text>
+				</View>
+			</View>
+
+			{/* search task */}
+			<View className="mb-6">
+				<Text className="text-white font-semibold mb-2">Search Task</Text>
+				<View className="flex-row items-center gap-3">
+					<View className="flex-1">
+						<TextInput
+							className="bg-white rounded-2xl px-4 py-2"
+							value={search}
+							onChangeText={setSearch}
+							autoCapitalize="none"
+							autoCorrect={false}
+						/>
+					</View>
 				</View>
 			</View>
 
