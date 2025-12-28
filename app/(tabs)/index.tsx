@@ -1,7 +1,7 @@
 import { supabase } from "@/utils/supabase";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 
 type Task = {
 	id: string;
@@ -89,6 +89,7 @@ export default function HomeScreen() {
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 	const handleUpdateTask = async () => {
 		if (!selectedTask) return;
+		if (!form.title.trim()) return;
 		try {
 			setIsLoading(true);
 			const { error } = await supabase
@@ -104,6 +105,33 @@ export default function HomeScreen() {
 			setIsUpdateModalVisible(false);
 			setIsLoading(false);
 			setForm({ title: "" });
+			getTasks();
+		}
+	};
+
+	// alert delete task
+	const confirmDeleteTask = (task: Task) => {
+		Alert.alert("Hapus Task", `Yakin mau hapus task ${task.title}?`, [
+			{
+				text: "Batal",
+				style: "cancel",
+			},
+			{
+				text: "Hapus",
+				style: "destructive",
+				onPress: () => handleDeleteTask(task.id),
+			},
+		]);
+	};
+	const handleDeleteTask = async (taskId: string) => {
+		try {
+			setIsLoading(true);
+			const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+			if (error) throw error.message;
+		} catch (error) {
+			throw error;
+		} finally {
+			setIsLoading(false);
 			getTasks();
 		}
 	};
@@ -147,6 +175,7 @@ export default function HomeScreen() {
 							<View className="flex flex-row items-center gap-3">
 								<Pressable
 									className="p-2 rounded-xl bg-yellow-500"
+									disabled={isLoading}
 									onPress={() => {
 										setIsUpdateModalVisible(true);
 										setSelectedTask(item);
@@ -156,6 +185,12 @@ export default function HomeScreen() {
 										});
 									}}>
 									<Feather name="edit" size={17} color="white" />
+								</Pressable>
+								<Pressable
+									className="p-2 rounded-xl bg-red-500"
+									onPress={() => confirmDeleteTask(item)}
+									disabled={isLoading}>
+									<Feather name="trash" size={17} color="white" />
 								</Pressable>
 								<Switch
 									value={item.is_done}
