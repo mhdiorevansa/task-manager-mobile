@@ -19,13 +19,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.diorevansa.taskmanagermobile"
     },
     "web": {
-			"output": "static",
-			"favicon": "./assets/images/favicon.png",
-			"bundler": "metro"
-		},
+      "output": "static",
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
+    },
     "plugins": [
       "expo-router",
       [
@@ -44,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "29eec0ec-68af-42b4-aab3-4d56e4cfb069"
+      }
     }
   }
 }

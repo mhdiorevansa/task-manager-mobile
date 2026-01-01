@@ -1,0 +1,24 @@
+1. Login Expo
+=> npx expo login
+
+2. check login
+=> npx expo whoami
+
+3. INSTALL EAS CLI
+=> npm install -g eas-cli
+
+4. KONFIGURASI EAS
+=> eas build:configure
+
+5. BUILD ANDROID
+=> eas build:configure
+
+6. Kalau ada env, set env nya ke eas
+=> eas secret:create --name EXPO_PUBLIC_SUPABASE_URL --value aaaaa
+=> eas secret:create --name EXPO_PUBLIC_SUPABASE_KEY --value aaaaa
+
+6. DOWNLOAD FILE BUILD
+=> eas build -p android --profile production --clear-cache
+
+7. TEST KE HANDPHONE
+=> eas build -p android --profile preview --clear-cache
