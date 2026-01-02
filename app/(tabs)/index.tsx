@@ -1,7 +1,18 @@
 import { supabase } from "@/utils/supabase";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Alert, FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
+import {
+	Alert,
+	FlatList,
+	KeyboardAvoidingView,
+	Modal,
+	Platform,
+	Pressable,
+	Switch,
+	Text,
+	TextInput,
+	View,
+} from "react-native";
 
 type Task = {
 	id: string;
@@ -256,30 +267,34 @@ export default function HomeScreen() {
 
 			{/* modal add */}
 			<Modal visible={isCreateModalVisible} animationType="slide" transparent>
-				<View className="flex-1 bg-neutral-900/40 justify-end">
-					<View className="bg-white rounded-t-3xl p-6">
-						<Text className="text-xl font-bold mb-4">New Task</Text>
-						<TextInput
-							placeholder="Task title..."
-							className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
-							value={form.title}
-							onChangeText={(value) => updateForm("title", value)}
-						/>
-						<View className="flex-row gap-3">
-							<Pressable
-								onPress={() => setIsCreateModalVisible(false)}
-								className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
-								<Text>Cancel</Text>
-							</Pressable>
-							<Pressable
-								className="flex-1 py-3 rounded-xl bg-black items-center"
-								onPress={handleCreateTask}
-								disabled={isLoading}>
-								<Text className="text-white font-semibold">Save</Text>
-							</Pressable>
+				<KeyboardAvoidingView
+					behavior={Platform.OS === "ios" ? "padding" : "height"}
+					className="flex-1">
+					<View className="flex-1 bg-neutral-900/40 justify-end">
+						<View className="bg-white rounded-t-3xl p-6">
+							<Text className="text-xl font-bold mb-4">New Task</Text>
+							<TextInput
+								placeholder="Task title..."
+								className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
+								value={form.title}
+								onChangeText={(value) => updateForm("title", value)}
+							/>
+							<View className="flex-row gap-3">
+								<Pressable
+									onPress={() => setIsCreateModalVisible(false)}
+									className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
+									<Text>Cancel</Text>
+								</Pressable>
+								<Pressable
+									className="flex-1 py-3 rounded-xl bg-black items-center"
+									onPress={handleCreateTask}
+									disabled={isLoading}>
+									<Text className="text-white font-semibold">Save</Text>
+								</Pressable>
+							</View>
 						</View>
 					</View>
-				</View>
+				</KeyboardAvoidingView>
 			</Modal>
 
 			{/* modal update */}
