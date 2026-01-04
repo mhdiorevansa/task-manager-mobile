@@ -266,7 +266,12 @@ export default function HomeScreen() {
 			</Pressable>
 
 			{/* modal add */}
-			<Modal visible={isCreateModalVisible} animationType="slide" transparent>
+			<Modal
+				visible={isCreateModalVisible}
+				animationType="slide"
+				transparent
+				navigationBarTranslucent={false}
+				statusBarTranslucent={false}>
 				<KeyboardAvoidingView
 					behavior={Platform.OS === "ios" ? "padding" : "height"}
 					className="flex-1">
@@ -298,34 +303,43 @@ export default function HomeScreen() {
 			</Modal>
 
 			{/* modal update */}
-			<Modal visible={isUpdateModalVisible} animationType="slide" transparent>
-				<View className="flex-1 bg-neutral-900/40 justify-end">
-					<View className="bg-white rounded-t-3xl p-6">
-						<Text className="text-xl font-bold mb-4">Update Task</Text>
-						<TextInput
-							placeholder="Task title..."
-							className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
-							value={form.title}
-							onChangeText={(value) => updateForm("title", value)}
-						/>
-						<View className="flex-row gap-3">
-							<Pressable
-								onPress={() => {
-									setIsUpdateModalVisible(false);
-									setForm({ title: "" });
-								}}
-								className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
-								<Text>Cancel</Text>
-							</Pressable>
-							<Pressable
-								className="flex-1 py-3 rounded-xl bg-black items-center"
-								onPress={handleUpdateTask}
-								disabled={isLoading}>
-								<Text className="text-white font-semibold">Save</Text>
-							</Pressable>
+			<Modal
+				visible={isUpdateModalVisible}
+				animationType="slide"
+				transparent
+				navigationBarTranslucent={false}
+				statusBarTranslucent={false}>
+				<KeyboardAvoidingView
+					behavior={Platform.OS === "ios" ? "padding" : "height"}
+					className="flex-1">
+					<View className="flex-1 bg-neutral-900/40 justify-end">
+						<View className="bg-white rounded-t-3xl p-6">
+							<Text className="text-xl font-bold mb-4">Update Task</Text>
+							<TextInput
+								placeholder="Task title..."
+								className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
+								value={form.title}
+								onChangeText={(value) => updateForm("title", value)}
+							/>
+							<View className="flex-row gap-3">
+								<Pressable
+									onPress={() => {
+										setIsUpdateModalVisible(false);
+										setForm({ title: "" });
+									}}
+									className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
+									<Text>Cancel</Text>
+								</Pressable>
+								<Pressable
+									className="flex-1 py-3 rounded-xl bg-black items-center"
+									onPress={handleUpdateTask}
+									disabled={isLoading}>
+									<Text className="text-white font-semibold">Save</Text>
+								</Pressable>
+							</View>
 						</View>
 					</View>
-				</View>
+				</KeyboardAvoidingView>
 			</Modal>
 		</View>
 	);
