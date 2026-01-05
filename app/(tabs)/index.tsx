@@ -1,6 +1,7 @@
 import { supabase } from "@/utils/supabase";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
 	Alert,
 	FlatList,
@@ -49,28 +50,30 @@ export default function HomeScreen() {
 	const totalTasks: number = tasks.length;
 	const doneTasks: number = tasks.filter((t: Task) => t.is_done).length;
 
-	// create task
-	const [form, setForm] = useState<TaskForm>({
-		title: "",
-		is_done: false,
-	});
+	// setup useForm
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const updateForm = <Field extends keyof TaskForm>(key: Field, value: TaskForm[Field]) => {
-		setForm((prev) => ({
-			...prev,
-			[key]: value,
-		}));
-	};
-	const handleCreateTask = async () => {
-		if (!form.title.trim()) return;
+	const {
+		control,
+		handleSubmit,
+		reset,
+		formState: { errors },
+	} = useForm<TaskForm>({
+		defaultValues: {
+			title: "",
+			is_done: false,
+		},
+	});
+
+	// create task
+	const handleCreateTask = async (data: TaskForm) => {
 		try {
 			setIsLoading(true);
 			const { error } = await supabase.from("tasks").insert({
-				...form,
+				title: data.title,
 				is_done: false,
 			});
 			if (error) throw error.message;
-			setForm({ title: "" });
+			reset();
 			setIsCreateModalVisible(false);
 			getTasks();
 		} catch (error) {
@@ -96,27 +99,36 @@ export default function HomeScreen() {
 		}
 	};
 
-	// update task
+	// default data when update
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-	const handleUpdateTask = async () => {
+	useEffect(() => {
+		if (selectedTask) {
+			reset({
+				title: selectedTask.title,
+			});
+		}
+	}, [selectedTask, reset]);
+
+	// update task
+	const handleUpdateTask = async (data: TaskForm) => {
 		if (!selectedTask) return;
-		if (!form.title.trim()) return;
 		try {
 			setIsLoading(true);
 			const { error } = await supabase
 				.from("tasks")
 				.update({
-					...form,
+					title: data.title,
 				})
-				.eq("id", selectedTask?.id);
+				.eq("id", selectedTask.id);
 			if (error) throw error.message;
+			reset();
+			setIsUpdateModalVisible(false);
+			setSelectedTask(null);
+			getTasks();
 		} catch (error) {
 			throw error;
 		} finally {
-			setIsUpdateModalVisible(false);
 			setIsLoading(false);
-			setForm({ title: "" });
-			getTasks();
 		}
 	};
 
@@ -229,10 +241,6 @@ export default function HomeScreen() {
 									onPress={() => {
 										setIsUpdateModalVisible(true);
 										setSelectedTask(item);
-										setForm({
-											title: item.title,
-											is_done: item.is_done,
-										});
 									}}>
 									<Feather name="edit" size={17} color="white" />
 								</Pressable>
@@ -278,12 +286,20 @@ export default function HomeScreen() {
 					<View className="flex-1 bg-neutral-900/40 justify-end">
 						<View className="bg-white rounded-t-3xl p-6">
 							<Text className="text-xl font-bold mb-4">New Task</Text>
-							<TextInput
-								placeholder="Task title..."
-								className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
-								value={form.title}
-								onChangeText={(value) => updateForm("title", value)}
+							<Controller
+								control={control}
+								name="title"
+								rules={{ required: "Title tidak boleh kosong" }}
+								render={({ field: { onChange, value } }) => (
+									<TextInput
+										placeholder="Task title..."
+										className="border border-neutral-300 rounded-xl px-4 py-3 mb-2"
+										value={value}
+										onChangeText={onChange}
+									/>
+								)}
 							/>
+							{errors.title && <Text className="text-red-500 mb-3">{errors.title.message}</Text>}
 							<View className="flex-row gap-3">
 								<Pressable
 									onPress={() => setIsCreateModalVisible(false)}
@@ -292,7 +308,7 @@ export default function HomeScreen() {
 								</Pressable>
 								<Pressable
 									className="flex-1 py-3 rounded-xl bg-black items-center"
-									onPress={handleCreateTask}
+									onPress={handleSubmit(handleCreateTask)}
 									disabled={isLoading}>
 									<Text className="text-white font-semibold">Save</Text>
 								</Pressable>
@@ -314,25 +330,32 @@ export default function HomeScreen() {
 					className="flex-1">
 					<View className="flex-1 bg-neutral-900/40 justify-end">
 						<View className="bg-white rounded-t-3xl p-6">
-							<Text className="text-xl font-bold mb-4">Update Task</Text>
-							<TextInput
-								placeholder="Task title..."
-								className="border border-neutral-300 rounded-xl px-4 py-3 mb-4"
-								value={form.title}
-								onChangeText={(value) => updateForm("title", value)}
+							<Text className="text-xl font-bold mb-4">Update Tak</Text>
+							<Controller
+								control={control}
+								name="title"
+								rules={{ required: "Title tidak boleh kosong" }}
+								render={({ field: { onChange, value } }) => (
+									<TextInput
+										placeholder="Task title..."
+										className="border border-neutral-300 rounded-xl px-4 py-3 mb-2"
+										value={value}
+										onChangeText={onChange}
+									/>
+								)}
 							/>
+							{errors.title && <Text className="text-red-500 mb-3">{errors.title.message}</Text>}
 							<View className="flex-row gap-3">
 								<Pressable
 									onPress={() => {
 										setIsUpdateModalVisible(false);
-										setForm({ title: "" });
 									}}
 									className="flex-1 py-3 rounded-xl bg-neutral-200 items-center">
 									<Text>Cancel</Text>
 								</Pressable>
 								<Pressable
 									className="flex-1 py-3 rounded-xl bg-black items-center"
-									onPress={handleUpdateTask}
+									onPress={handleSubmit(handleUpdateTask)}
 									disabled={isLoading}>
 									<Text className="text-white font-semibold">Save</Text>
 								</Pressable>
